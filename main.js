@@ -1,36 +1,42 @@
-// Topics covered:
-// - loops: for/of loop, break
-// - arrays: push()
-// - object oriented: prototypes, classes
-// - control structure: switch
-// - role modes and targets saved to memory
-// - action/target/movement pattern
-
-require('proto.Room.js');
-require('proto.Creep.js');
+var roleHarvester = require('role.harvester');
+var roleUpgrader = require('role.upgrader');
+var roleBuilder = require('role.builder');
 
 module.exports.loop = function () {
+    var builders = _.filter(Game.creeps, (creep) => creep.memory.role == 'builder');
 
-    // Game is not a class. it's an object that exists only inside the game loop. So
-    // instead of adding functions to a prototype, we assign them directly to a new object
-    // we've called "extensions" within the Game object.
-    Game.extensions = require('ext.Game.js');
-
-    // have each room we own perform their actions
-    for (var room of Game.extensions.myRooms()) {
-        // spawn all the creeps we want to exist
-        room.doSpawn();
-        // activate the tower defenses
-        room.defense();
+    if(builders.length < 2) {
+        var newName = 'builders' + Game.time;
+        Game.spawns['Spawn1'].spawnCreep([WORK,CARRY,MOVE], newName, 
+            {memory: {role: 'builder'}});        
     }
+    
+    var harvesters = _.filter(Game.creeps, (creep) => creep.memory.role == 'harvester');
 
-    // have each creep execute their role
-    for (var name in Game.creeps) {
+    if(harvesters.length < 2) {
+        var newName = 'Harvester' + Game.time;
+        Game.spawns['Spawn1'].spawnCreep([WORK,CARRY,MOVE], newName, 
+            {memory: {role: 'harvester'}});        
+    }
+    
+    var upgradings = _.filter(Game.creeps, (creep) => creep.memory.role == 'upgrader');
+
+    if(upgradings.length < 2) {
+        var newName = 'upgrading' + Game.time;
+        Game.spawns['Spawn1'].spawnCreep([WORK,CARRY,MOVE], newName, 
+            {memory: {role: 'upgrader'}});        
+    }
+    
+    for(var name in Game.creeps) {
         var creep = Game.creeps[name];
-        creep.act();
+        if(creep.memory.role == 'harvester') {
+            roleHarvester.run(creep);
+        }
+        if(creep.memory.role == 'upgrader') {
+            roleUpgrader.run(creep);
+        }
+        if(creep.memory.role == 'builder') {
+            roleBuilder.run(creep);
+        }
     }
-
-    // clean up our memory
-    Game.extensions.cleanup();
-
 }
